@@ -1,1 +1,31 @@
 @import "tailwindcss";
+/* Latin subset only -- the default import pulls in Cyrillic, Greek and
+   Vietnamese glyph sets this English-only site never uses, adding ~400 KB
+   of unnecessary font weight against the A17 Core Web Vitals standard. */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-surface: #0f172a;
+  --color-panel: #1e293b;
+  --color-border-hairline: #334155;
+  --color-ink: #e2e8f0;
+  --color-ink-muted: #94a3b8;
+  --color-accent: #f0b429;
+  --color-accent-ink: #1c1206;
+  --color-valid: #4ade80;
+  --color-error: #f87171;
+
+  --radius-field: 2px;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
