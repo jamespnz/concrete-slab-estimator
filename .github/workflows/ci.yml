@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install (clean, deterministic)
+        run: npm ci
+
+      - name: Lint (blocking)
+        run: npm run lint
+
+      - name: Type check
+        run: npx tsc -b
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # LIMITATION, read before trusting this gate: scanning the built dist/
+      # bundle does not work -- it necessarily contains every dependency's own
+      # code (React's internal feature-detection references fetch(; its dev
+      # warnings link to https://react.dev; the app's own module script tag is
+      # always present). None of that is a violation. This check instead scans
+      # only the source WE write (src/, tests/), before bundling, and checks
+      # index.html (source, not built) for a script or link tag pointing at an
+      # external host. It cannot catch a call assembled from concatenated
+      # strings or introduced by a future dependency's own runtime behaviour.
+      # It is a shift-left tripwire, not proof of the Trust Moat -- the
+      # authoritative check remains the browser Network panel during the
+      # manual post-deploy smoke test (runbook section 6/9).
+      - name: Trust Moat tripwire on our own source (heuristic only, see comment above)
+        run: |
+          if grep -rEoi "fetch\(|XMLHttpRequest|new WebSocket\(" src/ tests/ ; then
+            echo "Found a network-call pattern in our own source. If this is intentional, this check needs updating -- it should not exist in a zero-backend calculator."
+            exit 1
+          fi
+          if grep -Eoi '<(script|link)[^>]+(src|href)="https?://' index.html ; then
+            echo "Found an external host referenced in index.html. Review before shipping."
+            exit 1
+          fi
+          echo "No network-call patterns in our own source, and no external hosts referenced in index.html."
